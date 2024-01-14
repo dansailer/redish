@@ -25,21 +25,34 @@ jobs:
         run: |
           for GOOS in darwin linux windows; do
             for GOARCH in amd64; do
-              if [ $GOOS = "windows" ]; then
+              if [[ "${GOOS}" == "windows" ]]; then
                 env SUFFIX=".exe"
               fi
-              go build -v -o artifacts/redish-${GOOS}-${GOARCH}${SUFFIX}
+              FILENAME="go-${GOOS}-${GOARCH}${SUFFIX}"
+              go build -v -o artifacts/${FILENAME}
+              if [[ "${GOOS}" == "windows" ]]; then
+                7z a artifacts/${FILENAME}.zip artifacts/${FILENAME}
+                rm artifacts/${FILENAME}
+              else
+                tar -czvf artifacts/${FILENAME}.tar.gz artifacts/${FILENAME}
+                rm artifacts/${FILENAME}
+              fi
             done
-          done       
-      - name: Release Notes
-        run:
-          git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
-      - name: Release with Notes
-        uses: softprops/action-gh-release@v1
-        with:
-          body_path: ".github/RELEASE-TEMPLATE.md"
-          draft: true
-          files: artifacts/*
+          done 
+      - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh release create ${{ github.ref_name }} artifacts/* --generate-notes --title "Version ${{ github.ref_name }}"      
+      # - name: Release Notes
+      #   run:
+      #     git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
+      # - name: Release with Notes
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     body_path: ".github/RELEASE-TEMPLATE.md"
+      #     draft: true
+      #     files: artifacts/*
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
