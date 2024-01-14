@@ -1,0 +1,45 @@
+name: Go Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build_release:
+    name: Build release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21.5
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install dependencies
+        run: |
+          go get .
+      - name: Build
+        run: |
+          for GOOS in darwin linux windows; do
+            for GOARCH in amd64; do
+              if [ $GOOS = "windows" ]; then
+                env SUFFIX=".exe"
+              fi
+              go build -v -o artifacts/redish-${GOOS}-${GOARCH}${SUFFIX}
+            done
+          done       
+      - name: Release Notes
+        run:
+          git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
+      - name: Release with Notes
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: ".github/RELEASE-TEMPLATE.md"
+          draft: true
+          files: artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
