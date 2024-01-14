@@ -1,6 +1,6 @@
 module github.com/dansailer/redish
 
-go 1.21
+go 1.21.5
 
 require (
 	github.com/chzyer/readline v1.5.1
