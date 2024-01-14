@@ -16,8 +16,8 @@ jobs:
           go-version: 1.21.5
       - name: Check out code
         uses: actions/checkout@v4
-        #with:
-        #  fetch-depth: 0
+        with:
+          fetch-depth: 0
       - name: Install dependencies
         run: |
           go get .
@@ -28,7 +28,7 @@ jobs:
               if [[ "${GOOS}" == "windows" ]]; then
                 env SUFFIX=".exe"
               fi
-              FILENAME="go-${GOOS}-${GOARCH}${SUFFIX}"
+              FILENAME="redish-${GOOS}-${GOARCH}${SUFFIX}"
               go build -v -o artifacts/${FILENAME}
               if [[ "${GOOS}" == "windows" ]]; then
                 7z a artifacts/${FILENAME}.zip artifacts/${FILENAME}
@@ -43,7 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >-
-          gh release create ${{ github.ref_name }} artifacts/* --generate-notes --title "Version ${{ github.ref_name }}"      
+          gh release create ${{ github.ref_name }} artifacts/* --generate-notes      
       # - name: Release Notes
       #   run:
       #     git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
