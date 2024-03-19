@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	version     = "0.0.1"
+	version     = "0.0.2"
 	showHelp    = flag.Bool("help", false, "Output this help and exit.")
 	showVersion = flag.Bool("version", false, "Output version and exit.")
 	uri         = flag.String("uri", "localhost:6379", "Redis server URI")
