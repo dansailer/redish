@@ -28,7 +28,10 @@ jobs:
               if [[ "${GOOS}" == "windows" ]]; then
                 env SUFFIX=".exe"
               fi
-              FILENAME="redish-${GOOS}-${GOARCH}${SUFFIX}"
+              if [[ "${GOOS}" == "linux" ]]; then
+                env CGO_ENABLED=0
+              fi
+              FILENAME="redish-${GOOS}-${GOARCH}-${{ github.ref_name }}${SUFFIX}"
               go build -v -o artifacts/${FILENAME}
               if [[ "${GOOS}" == "windows" ]]; then
                 7z a artifacts/${FILENAME}.zip artifacts/${FILENAME}
