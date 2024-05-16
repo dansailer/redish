@@ -13,7 +13,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.21.5
+          go-version: 1.22.3
       - name: Check out code
         uses: actions/checkout@v4
         with:
@@ -26,9 +26,9 @@ jobs:
           for GOOS in darwin linux windows; do
             for GOARCH in amd64; do
               if [[ "${GOOS}" == "windows" ]]; then
-                env SUFFIX=".exe"
+                SUFFIX=".exe"
               fi
-              FILENAME="redish-${GOOS}-${GOARCH}-${{ github.ref_name }}${SUFFIX}"
+              FILENAME="redish-${{ github.ref_name }}-${GOOS}-${GOARCH}${SUFFIX}"
               CGO_ENABLED=0 go build -v -o artifacts/${FILENAME}
               if [[ "${GOOS}" == "windows" ]]; then
                 7z a artifacts/${FILENAME}.zip artifacts/${FILENAME}
