@@ -1,4 +1,4 @@
-name: Tests
+name: Test Redis Connectivity
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        redis-version: ['8-alpine', '7-alpine']
+        redis-version: ['8-alpine', '7-alpine', '6-alpine']
     
     services:
       redis:
@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -42,7 +42,7 @@ jobs:
           echo "Using Go version: $GO_VERSION"
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ steps.go-version.outputs.version }}
 
