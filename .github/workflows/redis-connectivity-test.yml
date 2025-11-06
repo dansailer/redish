@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        redis-version: ['8-alpine', '7-alpine', '6-alpine']
+        redis-version: ['8-alpine', '7-alpine', '6-bookworm']
     
     services:
       redis:

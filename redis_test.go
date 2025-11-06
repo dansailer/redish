@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9/maintnotifications"
 )
 
 func TestRedisConnection(t *testing.T) {
@@ -22,6 +23,12 @@ func TestRedisConnection(t *testing.T) {
 		Addr:     redisURL,
 		Password: password,
 		DB:       0, // use default DB
+		// https://github.com/redis/go-redis/issues/3536
+		// Explicitly disable maintenance notifications
+		// This prevents the client from sending CLIENT MAINT_NOTIFICATIONS ON
+		MaintNotificationsConfig: &maintnotifications.Config{
+			Mode: maintnotifications.ModeDisabled,
+		},
 	})
 
 	ctx := context.Background()
