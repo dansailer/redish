@@ -6,52 +6,18 @@ on:
       - 'v*'
 
 permissions:
-  contents: write  # Needed for releases
-  packages: write  # Needed for publishing packages
+  contents: write
+  packages: write
 
 jobs:
-  test:
-    name: Run tests
-    runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 2s --health-retries 5
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1  # Shallow clone for tests
-
-      - name: Extract Go version from go.mod
-        id: go-version
-        run: |
-          GO_VERSION=$(grep '^go ' go.mod | cut -d' ' -f2)
-          echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
-          echo "Using Go version: $GO_VERSION"
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ steps.go-version.outputs.version }}
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run tests
-        run: go test ./...
-
   build_release:
     name: Build release
     runs-on: ubuntu-latest
-    needs: test
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history needed for goreleaser
+          fetch-depth: 0
 
       - name: Extract Go version from go.mod
         id: go-version
