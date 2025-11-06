@@ -1,0 +1,74 @@
+name: Test Redis Connectivity
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  redis-connectivity-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        redis-version: ['8-alpine', '7-alpine']
+    
+    services:
+      redis:
+        image: redis:${{ matrix.redis-version }}
+        ports:
+          - 6379:6379
+        env:
+          REDIS_PASSWORD: testpassword123
+        options: >-
+          --health-cmd "redis-cli -a testpassword123 ping"
+          --health-start-period 20s
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Extract Go version from go.mod
+        id: go-version
+        run: |
+          GO_VERSION=$(grep '^go ' go.mod | cut -d' ' -f2)
+          echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
+          echo "Using Go version: $GO_VERSION"
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.go-version.outputs.version }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ steps.go-version.outputs.version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ steps.go-version.outputs.version }}-
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run all tests
+        run: |
+          echo "Running all tests..."
+          go test -v ./...
+
+      - name: Test application connection
+        run: |
+          echo "Testing application Redis connection..."
+          timeout 10s go run main.go -uri localhost:6379 -password testpassword123 -commands "PING;SET app:test success;GET app:test"

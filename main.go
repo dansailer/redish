@@ -11,12 +11,13 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9/maintnotifications"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 var (
-	version     = "0.0.3"
+	version     = "dev"
 	showHelp    = flag.Bool("help", false, "Output this help and exit.")
 	showVersion = flag.Bool("version", false, "Output version and exit.")
 	uri         = flag.String("uri", "localhost:6379", "Redis server URI")
@@ -71,6 +72,13 @@ func main() {
 		Password:  *password,
 		DB:        *db,
 		TLSConfig: tlsConfig,
+
+		// https://github.com/redis/go-redis/issues/3536
+		// Explicitly disable maintenance notifications
+		// This prevents the client from sending CLIENT MAINT_NOTIFICATIONS ON
+		MaintNotificationsConfig: &maintnotifications.Config{
+			Mode: maintnotifications.ModeDisabled,
+		},
 	})
 
 	log.Info().Msg("Attempting to connect to Redis...")
