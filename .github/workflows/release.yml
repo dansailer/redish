@@ -5,54 +5,77 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write  # Needed for releases
+  packages: write  # Needed for publishing packages
+
 jobs:
-  build_release:
-    name: Build release
+  test:
+    name: Run tests
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 2s --health-retries 5
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # Shallow clone for tests
+
+      - name: Extract Go version from go.mod
+        id: go-version
+        run: |
+          GO_VERSION=$(grep '^go ' go.mod | cut -d' ' -f2)
+          echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
+          echo "Using Go version: $GO_VERSION"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.3
-      - name: Check out code
+          go-version: ${{ steps.go-version.outputs.version }}
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test ./...
+
+  build_release:
+    name: Build release
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Install dependencies
+          fetch-depth: 0  # Full history needed for goreleaser
+
+      - name: Extract Go version from go.mod
+        id: go-version
         run: |
-          go get .
-      - name: Build
-        run: |
-          for GOOS in darwin linux windows; do
-            for GOARCH in amd64; do
-              if [[ "${GOOS}" == "windows" ]]; then
-                SUFFIX=".exe"
-              fi
-              FILENAME="redish-${{ github.ref_name }}-${GOOS}-${GOARCH}${SUFFIX}"
-              CGO_ENABLED=0 go build -v -o artifacts/${FILENAME}
-              if [[ "${GOOS}" == "windows" ]]; then
-                7z a artifacts/${FILENAME}.zip artifacts/${FILENAME}
-                rm artifacts/${FILENAME}
-              else
-                tar -czvf artifacts/${FILENAME}.tar.gz artifacts/${FILENAME}
-                rm artifacts/${FILENAME}
-              fi
-            done
-          done 
-      - name: Release
+          GO_VERSION=$(grep '^go ' go.mod | cut -d' ' -f2)
+          echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
+          echo "Using Go version: $GO_VERSION"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.go-version.outputs.version }}
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Install goreleaser (via action)
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: '~> v2'
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >-
-          gh release create ${{ github.ref_name }} artifacts/* --generate-notes      
-      # - name: Release Notes
-      #   run:
-      #     git log $(git describe HEAD~ --tags --abbrev=0)..HEAD --pretty='format:* %h %s%n  * %an <%ae>' --no-merges >> ".github/RELEASE-TEMPLATE.md"
-      # - name: Release with Notes
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     body_path: ".github/RELEASE-TEMPLATE.md"
-      #     draft: true
-      #     files: artifacts/*
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
