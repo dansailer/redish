@@ -5,16 +5,6 @@ on:
     types: [opened, synchronize, reopened]
     branches: [main]
   workflow_dispatch:
-    inputs:
-      redis_version:
-        description: 'Redis version to test against'
-        required: true
-        default: '7-alpine'
-        type: choice
-        options:
-        - '6-alpine'
-        - '7-alpine'
-        - 'latest'
 
 jobs:
   redis-connectivity-test:
@@ -22,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        redis-version: ['6-alpine', '7-alpine']
+        redis-version: ['8-alpine', '7-alpine']
     
     services:
       redis:
@@ -72,18 +62,6 @@ jobs:
 
       - name: Verify dependencies
         run: go mod verify
-
-      - name: Install redis-cli on runner
-        run: |
-          echo "Installing redis-cli (redis-tools) on runner..."
-          sudo apt-get update -y
-          sudo apt-get install -y redis-tools
-
-      - name: Wait for Redis to be ready
-        run: |
-          echo "Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 -a testpassword123 ping; do sleep 1; done'
-          echo "Redis is ready!"
 
       - name: Run all tests
         run: |
