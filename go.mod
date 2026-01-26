@@ -4,7 +4,7 @@ go 1.25.4
 
 require (
 	github.com/chzyer/readline v1.5.1
-	github.com/redis/go-redis/v9 v9.17.0
+	github.com/redis/go-redis/v9 v9.17.3
 	github.com/rs/zerolog v1.34.0
 )
 
